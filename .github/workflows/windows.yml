@@ -1,0 +1,19 @@
+name: Go package
+
+on: 
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+      - name: Build
+        run: cd windows && GOOS=windows go build -v .
+      - uses: Shopify/upload-to-release@v1.0.1
+        with:
+          name: NoWhatsNew-${{ github.event.release.tag_name }}.exe
+          path: windows/NoWhatsNew.exe
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
