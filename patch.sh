@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 FILENAME="./chunk~547eb3232.css"
 # set display to none
