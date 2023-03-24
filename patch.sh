@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 
-FILENAME="./chunk~547eb3232.css"
+steampaths=("$1" "$1/steamui/css" "$HOME/.local/share/Steam/steamui/css" "$HOME/.steam/steam/steamui/css" "$HOME/Steam/steamui/css")
+# ~/.local/share/Steam - Arch
+# ~/.steam/steam - Debian
+# ~/Steam - ???
+
+# see https://github.com/ValveSoftware/steam-for-linux/issues/6976
+
+# search for file in given paths
+for folder in "${steampaths[@]}"
+do
+  if [ -d "$folder" ]
+  then
+    FILENAME=$(grep -rl --include=*.css "libraryhome_UpdatesContainer" "$folder")
+    if $FILENAME; then break; fi
+  fi
+done
 # set display to none
 patch="display: none;"
 # find the libraryhome_UpdatesContainer_ reference
