@@ -12,8 +12,7 @@ jobs:
       - uses: actions/setup-go@v4
       - name: Build
         run: cd windows && GOOS=windows go build -v .
-      - uses: Shopify/upload-to-release@v1.0.1
+      - uses: svenstaro/upload-release-action@v2
         with:
-          name: NoWhatsNew-${{ github.event.release.tag_name }}.exe
-          path: windows/NoWhatsNew.exe
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          asset_name: NoWhatsNew-${{ github.event.release.tag_name }}.exe
+          file: windows/NoWhatsNew.exe

@@ -42,7 +42,7 @@ func alert(usermsg string, err bool) {
 func glob(root string) []string {
 	var files []string
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err == nil && strings.HasPrefix(info.Name(), "chunk") && filepath.Ext(path) == ".css" {
+		if err == nil && filepath.Ext(path) == ".css" {
 			files = append(files, path)
 		}
 		return nil
