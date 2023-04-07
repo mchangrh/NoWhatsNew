@@ -2,42 +2,12 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
-	"unsafe"
 )
-
-func alert(usermsg string, err bool) {
-	// https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxw
-	var user32DLL = syscall.NewLazyDLL("user32.dll")
-	var procMessageBox = user32DLL.NewProc("MessageBoxW")
-	const (
-		MB_OK = 0x00000000
-
-		MB_ICONSTOP        = 0x00000010
-		MB_ICONQUESTION    = 0x00000020
-		MB_ICONWARNING     = 0x00000030
-		MB_ICONINFORMATION = 0x00000040
-	)
-
-	lpCaption, _ := syscall.UTF16PtrFromString("NoWhatsNew")
-	lpText, _ := syscall.UTF16PtrFromString(usermsg)
-	icon := uintptr(MB_ICONINFORMATION)
-	// replace with warning icon if error
-	if err {
-		icon = MB_ICONWARNING
-	}
-
-	syscall.SyscallN(procMessageBox.Addr(),
-		0,
-		uintptr(unsafe.Pointer(lpText)),
-		uintptr(unsafe.Pointer(lpCaption)),
-		MB_OK|icon,
-	)
-}
 
 func glob(root string) []string {
 	var files []string
@@ -57,19 +27,15 @@ func main() {
 	var err = errors.New("no candidate files found for patching - Make sure Steam is installed at C:\\Program Files (x86)\\Steam\\")
 	for _, file := range files {
 		err = readPatchFile(file)
-		if err.Error() == "already patched" {
-			alert("Already patched", false)
-			println("already patched")
-			return
-		}
 		if err == nil {
 			success = true
 		}
 	}
 	if !success {
-		alert(err.Error(), true)
 		println("error: " + err.Error())
 	}
+	println("Press Enter to exit...")
+	fmt.Scanln()
 }
 
 func readPatchFile(file string) error {
@@ -88,7 +54,6 @@ func readPatchFile(file string) error {
 			return errors.New("error writing file " + writeFileErr.Error())
 		}
 	}
-	alert("Done - Patched File", false)
 	println("Done - Patched File")
 	return nil
 }
