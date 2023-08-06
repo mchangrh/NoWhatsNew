@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -33,6 +34,11 @@ func main() {
 	}
 	if !success {
 		println("error: " + err.Error())
+	}
+	if success {
+		println("Restarting Steam...")
+		exec.Command("taskkill", "/im", "steam.exe", "/f", "/t").Run()
+		exec.Command("C:\\Program Files (x86)\\Steam\\Steam.exe").Start()
 	}
 	println("Press Enter to exit...")
 	fmt.Scanln()
