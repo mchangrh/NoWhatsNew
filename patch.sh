@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# LICENCE: MIT
+
 steampaths=("$1" "$1/steamui/css" "$HOME/.local/share/Steam/steamui/css" "$HOME/.steam/steam/steamui/css" "$HOME/Steam/steamui/css")
 # ~/.local/share/Steam - Arch
 # ~/.steam/steam - Debian
