@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -36,9 +35,7 @@ func main() {
 		println("error: " + err.Error())
 	}
 	if success {
-		println("Restarting Steam...")
-		exec.Command("taskkill", "/im", "steam.exe", "/f", "/t").Run()
-		exec.Command("C:\\Program Files (x86)\\Steam\\Steam.exe").Start()
+		println("Restart Steam to see changes")
 	}
 	println("Press Enter to exit...")
 	fmt.Scanln()
@@ -65,13 +62,13 @@ func readPatchFile(file string) error {
 }
 
 func patch(file string) (result string, err error) {
-	patch := "display: none;"
+	patch := "}div:has(>._17uEBe5Ri8TMsnfELvs8-N){display:none;}"
 	// find line
-	lineRegex := regexp.MustCompile(`libraryhome_UpdatesContainer_[0-9a-zA-Z]+?{[^{]+?padding.+?}`)
+	lineRegex := regexp.MustCompile(`\._17uEBe5Ri8TMsnfELvs8-N\{.+?;background-image:.+?\}`)
 	line := lineRegex.FindString(file)
 	if line == "" {
 		// find patched line
-		patchedRegex := regexp.MustCompile(`libraryhome_UpdatesContainer_[0-9a-zA-Z]+?{[^{]+?display: none;.+?}`)
+		patchedRegex := regexp.MustCompile(`div:has(>\._17uEBe5Ri8TMsnfELvs8-N)\{display:none;\}`)
 		patched := patchedRegex.FindString(file)
 		if patched != "" {
 			return "", errors.New("already patched")
@@ -79,7 +76,7 @@ func patch(file string) (result string, err error) {
 		return "", errors.New("line not found - the file might be missing or changed")
 	}
 	// find padding
-	cssPaddingRegex := regexp.MustCompile(`padding.+?;`)
+	cssPaddingRegex := regexp.MustCompile(`background-image:.+?}`)
 	cssPadding := cssPaddingRegex.FindString(line)
 	// find difference in length
 	paddingLength := len(cssPadding) - len(patch)
