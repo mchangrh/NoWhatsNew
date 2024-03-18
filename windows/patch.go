@@ -21,6 +21,11 @@ func glob(root string, ext string) []string {
 	return files
 }
 
+func exit() {
+	println("Press Enter to exit...")
+	fmt.Scanln()
+}
+
 func main() {
 	// print error message
 	println("Report issues to https://github.com/mchangrh/NoWhatsNew/issues")
@@ -29,28 +34,33 @@ func main() {
 	if err != nil {
 		println("error: " + err.Error())
 	}
+	println("Found CSS class name: " + cssName)
 	// find and read matching CSS file
 	cssFileContent, cssFileName, err := walkTester("C:\\Program Files (x86)\\Steam\\steamui\\css", ".css", "."+cssName)
 	if err != nil {
 		println("error: " + err.Error())
+		exit()
 		return
 	}
 	// patch CSS file
 	patchedCss, err := patchCss(cssFileContent, cssName)
 	if err != nil {
 		println("error: " + err.Error())
+		exit()
 		return
 	}
 	// write patched CSS file
 	err = writeFile(cssFileName, patchedCss)
 	if err != nil {
 		println("error patching file: " + err.Error())
+		exit()
+		return
+	} else {
+		println("Patched " + cssFileName)
+		println("Restart Steam to see changes")
+		exit()
 		return
 	}
-	// exit
-	println("Restart Steam to see changes")
-	println("Press Enter to exit...")
-	fmt.Scanln()
 }
 
 func writeFile(file string, newContent string) error {
