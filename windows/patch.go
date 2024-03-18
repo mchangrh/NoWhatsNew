@@ -9,10 +9,11 @@ import (
 	"strings"
 )
 
-func glob(root string) []string {
+// generate glob search path
+func glob(root string, ext string) []string {
 	var files []string
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err == nil && filepath.Ext(path) == ".css" {
+		if err == nil && filepath.Ext(path) == ext {
 			files = append(files, path)
 		}
 		return nil
@@ -21,71 +22,97 @@ func glob(root string) []string {
 }
 
 func main() {
+	// print error message
 	println("Report issues to https://github.com/mchangrh/NoWhatsNew/issues")
-	files := glob("C:\\Program Files (x86)\\Steam\\steamui\\css")
-	success := false
-	var err = errors.New("no candidate files found for patching - Make sure Steam is installed at C:\\Program Files (x86)\\Steam\\")
-	for _, file := range files {
-		err = readPatchFile(file)
-		if err == nil {
-			success = true
-		}
-	}
-	if !success {
+	// retreive CSS class name from JS
+	cssName, err := findJsIndicator()
+	if err != nil {
 		println("error: " + err.Error())
 	}
-	if success {
-		println("Restart Steam to see changes")
+	// find and read matching CSS file
+	cssFileContent, cssFileName, err := walkTester("C:\\Program Files (x86)\\Steam\\steamui\\css", ".css", "."+cssName)
+	if err != nil {
+		println("error: " + err.Error())
+		return
 	}
+	// patch CSS file
+	patchedCss, err := patchCss(cssFileContent, cssName)
+	if err != nil {
+		println("error: " + err.Error())
+		return
+	}
+	// write patched CSS file
+	err = writeFile(cssFileName, patchedCss)
+	if err != nil {
+		println("error patching file: " + err.Error())
+		return
+	}
+	// exit
+	println("Restart Steam to see changes")
 	println("Press Enter to exit...")
 	fmt.Scanln()
 }
 
-func readPatchFile(file string) error {
-	content, readFileErr := os.ReadFile(file)
-	if readFileErr != nil {
-		return errors.New("error reading file " + readFileErr.Error())
+func writeFile(file string, newContent string) error {
+	writeFileErr := os.WriteFile(file, []byte(newContent), 0644)
+	if writeFileErr != nil {
+		return errors.New("error writing file " + writeFileErr.Error())
 	}
-	newfile, patchFileErr := patch(string(content))
-	if patchFileErr != nil {
-		return patchFileErr
-	}
-	if newfile != "" {
-		println("Patching file")
-		writeFileErr := os.WriteFile(file, []byte(newfile), 0644)
-		if writeFileErr != nil {
-			return errors.New("error writing file " + writeFileErr.Error())
-		}
-	}
-	println("Done - Patched File")
 	return nil
 }
 
-func patch(file string) (result string, err error) {
-	patch := "}div:has(>._17uEBe5Ri8TMsnfELvs8-N){display:none;}"
-	// find line
-	lineRegex := regexp.MustCompile(`\._17uEBe5Ri8TMsnfELvs8-N\{.+?;background-image:.+?\}`)
-	line := lineRegex.FindString(file)
-	if line == "" {
-		// find patched line
-		patchedRegex := regexp.MustCompile(`div:has(>\._17uEBe5Ri8TMsnfELvs8-N)\{display:none;\}`)
-		patched := patchedRegex.FindString(file)
-		if patched != "" {
-			return "", errors.New("already patched")
-		}
-		return "", errors.New("line not found - the file might be missing or changed")
+func findJsIndicator() (cssClassName string, err error) {
+	// indicator for WhatsNew contianer
+	indicator := "UpdatesContainer"
+	fileContent, _, err := walkTester("C:\\Program Files (x86)\\Steam\\steamui", ".js", indicator)
+	if (err != nil) {
+		return "", err
 	}
-	// find padding
-	cssPaddingRegex := regexp.MustCompile(`background-image:.+?}`)
-	cssPadding := cssPaddingRegex.FindString(line)
+	// find indicator in file
+	jsDefRegex := regexp.MustCompile(`UpdatesContainer:"(.+?)"`)
+	matchArr := jsDefRegex.FindSubmatch([]byte(fileContent))
+	if len(matchArr) < 2 {
+		return "", errors.New("JS indicator not found - Please open an issue on GitHub")
+	} else {
+		cssClassName = string(matchArr[1])
+		return cssClassName, nil
+	}
+}
+
+func walkTester(root string, ext string, pattern string) (fileContents string, filename string, err error){
+	files := glob(root, ext)
+	for _, file := range files {
+		readFileContent, readFileErr := os.ReadFile(file)
+		if readFileErr != nil {
+			return "", "", errors.New("error reading file " + readFileErr.Error())
+		}
+		fileContents = string(readFileContent)
+		if strings.Contains(fileContents, pattern) {
+			return fileContents, file, nil
+		}
+	}
+	return "", "", errors.New("no matching " + ext + " files found")
+}
+
+func patchCss(fileContents string, className string) (newFileContents string, err error) {
+	// create patch based on className
+	patch := "div:has(>." + className + "){display:none}"
+	// check if already patched
+	if strings.Contains(fileContents, patch) {
+		return "", errors.New("already patched")
+	}
+	// continue with patching
+	// find .BasicUI child selector
+	candidateLineRegex := regexp.MustCompile("\\.BasicUI \\." + className + "{.+?}")
+	candidateLine := candidateLineRegex.FindString(fileContents)
+	if (candidateLine == "") {
+		return "", errors.New("candidate line not found - the file might be missing or changed")
+	}
 	// find difference in length
-	paddingLength := len(cssPadding) - len(patch)
-	stringPadding := strings.Repeat(" ", paddingLength)
-	patch = patch + stringPadding
-	// replace in line for
-	patch = strings.Replace(line, cssPadding, patch, 1)
+	paddingLength := len(candidateLine) - len(patch)
+	patch = patch + strings.Repeat(" ", paddingLength)
 	// replace in file
-	file = strings.Replace(file, line, patch, 1)
+	fileContents = strings.Replace(fileContents, candidateLine, patch, 1)
 	// Write file
-	return file, nil
+	return fileContents, nil
 }
