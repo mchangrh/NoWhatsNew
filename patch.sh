@@ -3,7 +3,7 @@
 # Compatibility: 2024-03-12 Beta | 1710281934
 # LICENCE: MIT
 
-steampaths=("$1" "$1/steamui/css" "$HOME/.local/share/Steam/steamui/css" "$HOME/.steam/steam/steamui/css" "$HOME/Steam/steamui/css")
+steampaths=("$1" "$1/steamui" "$HOME/.local/share/Steam/steamui" "$HOME/.steam/steam/steamui" "$HOME/Steam/steamui")
 # ~/.local/share/Steam - Arch
 # ~/.steam/steam - Debian
 # ~/Steam - ???
