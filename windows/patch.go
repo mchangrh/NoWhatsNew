@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -57,7 +58,9 @@ func main() {
 		return
 	} else {
 		println("Patched " + cssFileName)
-		println("Restart Steam to see changes")
+		println("Restarting Steam...")
+		exec.Command("taskkill", "/im", "steam.exe", "/f", "/t").Run()
+		exec.Command("C:\\Program Files (x86)\\Steam\\Steam.exe").Start()
 		exit()
 		return
 	}
